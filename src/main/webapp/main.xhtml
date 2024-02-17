@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+<h:body>
+    <ui:composition template="/templates/layout.xhtml">
+        <ui:define name="content">
+            <f:metadata>
+                <f:event type="preRenderView" listener="#{resultManager.init}"/>
+            </f:metadata>
+            <table id="page-main">
+                <tbody>
+                <tr>
+                    <td>
+                        <div class="captions">
+                            <p>Graph</p>
+                        </div>
+                        <div id="svg">
+                            <ui:include src="templates/svg.html"/>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="caption">
+                            <p>Table</p>
+                        </div>
+                        <h:panelGroup id="graph-table">
+                            <h:dataTable value="#{resultManager.results}" var="result">
+                                <h:column>
+                                    <f:facet name="header">X</f:facet>
+                                    #{result.x}
+                                </h:column>
+                                <h:column>
+                                    <f:facet name="header">Y</f:facet>
+                                    #{result.y}
+                                </h:column>
+                                <h:column>
+                                    <f:facet name="header">R</f:facet>
+                                    #{result.r}
+                                </h:column>
+                                <h:column>
+                                    <f:facet name="header">Hit</f:facet>
+                                    #{result.hit}
+                                </h:column>
+                                <h:column>
+                                    <f:facet name="header">Current Time</f:facet>
+                                    #{result.currentTime}
+                                </h:column>
+                            </h:dataTable>
+                        </h:panelGroup>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="captions">
+                            <p>Coordinates</p>
+                        </div>
+                        <div>
+                            <p:messages id="messagesC" showSummary="false" showDetail="true" closable="true">
+                                <h:outputText/>
+                            </p:messages>
+                            <h:form id="graph-form">
+                                <div>
+                                    <p:outputLabel value="X Value: " for="x-value"/>
+                                    <p:spinner max="5" min="-5" id="x-value" value="#{resultManager.currentResult.x}"
+                                               required="true"/>
+                                </div>
+                                <div id="y-block">
+                                    <p:outputLabel value="Y Value: " for="y-value"/>
+                                    <p:inputText id="y-value" maxlength="6" autocomplete="false" required="true"
+                                                 placeholder="Input Y (-3;3)"
+                                                 value="#{resultManager.currentResult.y}">
+                                        <f:validator validatorId="validatorY"/>
+                                    </p:inputText>
+                                </div>
+                                <div id="r-block">
+                                    <p:outputLabel value="R Value: " for="r-value"/>
+                                    <h:inputText id="r-value" value="#{resultManager.currentResult.r}" required="true"
+                                                />
+                                    <p:slider maxValue="5" minValue="2" step="0.1" for="r-value" display="r-value"/>
+<!--                                    <h:inputHidden id="R" name="r" value="#{resultManager.currentResult.x}">-->
+<!--                                        <f:validator validatorId="validatorX"/>-->
+<!--                                    </h:inputHidden>-->
+                                </div>
+                                <div id="btns">
+                                    <span id="crutch">
+                                    <h:commandButton type="submit" value="SUBMIT" ajax="false"
+                                                     action="#{resultManager.addResult}"/>
+                                    </span>
+                                    <h:commandButton type="reset" value="RESET"/>
+                                </div>
+                            </h:form>
+                            <h:form id="graph-form-hidden" style="display: none;">
+                                <p:inputNumber id="x-value-hidden"
+                                               minValue="-5"
+                                               maxValue="5"
+                                               value="#{resultManager.currentResult.x}"
+                                />
+                                <p:inputNumber id="y-value-hidden"
+                                               minValue="-3"
+                                               maxValue="3"
+                                               value="#{resultManager.currentResult.y}"/>
+                                <p:inputNumber id="r-value-hidden"
+                                               minValue="2"
+                                               maxValue="5"
+                                               value="#{resultManager.currentResult.r}"
+                                />
+                                <p:commandButton value="Submit"
+                                                 ajax="false"
+                                                 action="#{resultManager.addResult}"
+                                >
+                                </p:commandButton>
+                            </h:form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <h:link outcome="home">
+                <h:commandButton action="home" value="HOME" class="button-nav"/>
+            </h:link>
+        </ui:define>
+        <ui:define name="scripts">
+            <script type="module" src="./resources/js/index.js"></script>
+        </ui:define>
+    </ui:composition>
+</h:body>
+</html>
