@@ -1,0 +1,171 @@
+<project name="web3lab"
+         basedir="."
+         xmlns:ivy="antlib:org.apache.ivy.ant"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="antlib:org.apache.ivy.ant">
+    <property file="build.properties"/>
+
+    <path id="classpathRuntime">
+        <fileset dir="${lib}" includes="*.jar"/>
+    </path>
+
+    <path id="test.classpath" >
+        <path refid="classpathRuntime"/>
+        <fileset dir="${lib}" includes="**/*.jar"/>
+        <pathelement location="${build.tests}"/>
+    </path>
+
+    <target name="init">
+        <tstamp/>
+        <mkdir dir="${build}"/>
+        <mkdir dir="${build.classes}"/>
+        <mkdir dir="${build.tests}"/>
+        <mkdir dir="${build.doc}"/>
+        <mkdir dir="${dist}"/>
+        <mkdir dir="${dist.lib}"/>
+    </target>
+
+    <target name="download-ivy" unless="skip.download">
+        <mkdir dir="${ivy.jar.dir}"/>
+        <get src="https://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true"/>
+    </target>
+
+    <target name="install-ivy" depends="download-ivy" description="(*) install ivy">
+        <path id="ivy.lib.path">
+            <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+        </path>
+        <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+    </target>
+
+    <target name="resolve" depends="install-ivy" description="(*) resolve dependencies">
+        <ivy:retrieve log="quiet"/>
+    </target>
+
+    <target name="compile" depends="init, resolve" description="(*) compile the source">
+        <javac includeantruntime="false"
+               srcdir="${src}"
+               destdir="${build.classes}"
+               classpathref="classpathRuntime"/>
+    </target>
+
+    <target name="compile-tests" depends="compile" description="(*) compile tests">
+        <javac includeantruntime="false"
+               srcdir="${src.test}"
+               destdir="${build.tests}">
+            <classpath>
+                <path refid="classpathRuntime"/>
+                <path path="${src.test}"/>
+                <pathelement location="${build.classes}"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build" depends="compile" description="(*) build war and jar file">
+        <ivy:retrieve pattern="${dist.lib}/[artifact]-[revision](-[classifier]).[ext]" conf="compile,runtime"/>
+        <war destfile="${dist.war.name}" webxml="${src.webapp.webxml}">
+            <fileset dir="${src.webapp}">
+                <include name="**/*.*"/>
+            </fileset>
+            <lib dir="${dist.lib}"/>
+            <classes dir="${build.classes}"/>
+            <manifest>
+                <section name="Main">
+                    <attribute name="Project-Name" value="${project.name}"/>
+                    <attribute name="Project-Version" value="${project.version}"/>
+                </section>
+            </manifest>
+        </war>
+        <jar destfile="${dist.jar.name}" basedir="${build.classes}">
+            <manifest>
+                <section name="Main">
+                    <attribute name="Project-Name" value="${project.name}"/>
+                    <attribute name="Project-Version" value="${project.version}"/>
+                </section>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="test" depends="build, compile-tests" description="(*) run tests">
+        <mkdir dir="${dist.test}"/>
+        <junitlauncher printsummary="true">
+            <classpath>
+                <path refid="test.classpath"/>
+                <pathelement location="${build.classes}"/>
+                <pathelement location="${build.tests}"/>
+            </classpath>
+            <testclasses outputdir="${build.tests}">
+                <fileset dir="${build.tests}" includes="**/*.class" />
+                <listener type="legacy-xml" sendSysOut="true" sendSysErr="true"/>
+            </testclasses>
+        </junitlauncher>
+    </target>
+
+    <target name="doc" depends="build" description="(*) adding MD5 and SHA-1 project
+    files to MANIFEST.MF and generate javadoc">
+        <checksum algorithm="MD5" file="${dist.jar.name}" property="md5"/>
+        <checksum algorithm="SHA-1" file="${dist.jar.name}" property="sha1"/>
+        <jar destfile="${dist.jar.name}" basedir="${build.classes}" update="true">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Build-Date" value="${DSTAMP}"/>
+                <attribute name="MD5-Checksum" value="${md5}"/>
+                <attribute name="SHA1-Checksum" value="${sha1}"/>
+            </manifest>
+        </jar>
+        <checksum algorithm="MD5" file="${dist.war.name}" property="md5"/>
+        <checksum algorithm="SHA-1" file="${dist.war.name}" property="sha1"/>
+        <war destfile="${dist.war.name}" basedir="${build.classes}" update="true">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Build-Date" value="${DSTAMP}"/>
+                <attribute name="MD5-Checksum" value="${md5}"/>
+                <attribute name="SHA1-Checksum" value="${sha1}"/>
+            </manifest>
+        </war>
+        <javadoc version="true"
+                 author="true"
+                 use="true"
+                 destdir="${build.doc}"
+                 sourcepath="${src.main}"
+                 packagenames="*"
+                 classpath="${build.classes}"
+                 classpathref="classpathRuntime"
+                 windowtitle="${project.name} API">
+            <fileset dir="${src.main}">
+                <include name="**/*.java"/>
+            </fileset>
+        </javadoc>
+    </target>
+
+    <target name="diff" depends="compile" description="(*) check work copy and commit in git repo">
+        <exec executable="git" failonerror="true" outputproperty="git.status">
+            <arg value="status"/>
+            <arg value="--porcelain"/>
+        </exec>
+        <condition property="modifications.allowed">
+            <not>
+                <contains string="${git.status}" substring="M"/>
+            </not>
+        </condition>
+        <condition property="ignored.exist">
+            <contains string="${git.status}" substring="${ignored.classes}"/>
+        </condition>
+        <fail if="modifications.allowed" message="No Modifications detected in classes"/>
+        <fail if="ignored.exist" message="Modifications detected in ignored classes: ${git.status}"/>
+        <exec executable="git" failonerror="true">
+            <arg value="add"/>
+            <arg value="."/>
+        </exec>
+        <exec executable="git" failonerror="true">
+            <arg value="commit"/>
+            <arg value="-m"/>
+            <arg value="Automated commit by Ant"/>
+        </exec>
+    </target>
+
+    <target name="clean" description="(*) clean up">
+        <delete dir="${build}"/>
+        <delete dir="${dist.lib}"/>
+        <delete dir="${dist}"/>
+    </target>
+</project>

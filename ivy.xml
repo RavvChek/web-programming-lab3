@@ -1,0 +1,41 @@
+<ivy-module version="2.0">
+    <info organisation="com.mycompany" module="myapp"/>
+
+    <configurations>
+        <conf name="compile" description="Required to compile application"/>
+        <conf name="runtime" description="Additional run-time dependencies" extends="compile"/>
+        <conf name="test" description="Required for test only" extends="runtime"/>
+    </configurations>
+
+    <dependencies>
+        <dependency org="jakarta.platform" name="jakarta.jakartaee-web-api" rev="10.0.0" conf="compile->default"
+                    force="true"/>
+
+        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.10.2"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="5.10.2"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="5.10.2"/>
+        <dependency org="org.junit.platform" name="junit-platform-launcher" rev="1.10.2"/>
+
+        <dependency org="org.primefaces" name="primefaces" rev="13.0.0"/>
+
+        <dependency org="javax.enterprise" name="cdi-api" rev="2.0" conf="compile->default"/>
+
+        <dependency org="org.projectlombok" name="lombok" rev="1.18.24" conf="compile->default"/>
+
+        <dependency org="org.hibernate" name="hibernate-core" rev="6.3.1.Final">
+            <artifact name="hibernate-core" type="pom" ext="pom"/>
+        </dependency>
+
+        <dependency org="org.postgresql" name="postgresql" rev="42.7.0" conf="runtime->default"/>
+
+        <dependency org="org.hibernate.validator" name="hibernate-validator" rev="8.0.0.Final" conf="compile->default"/>
+
+        <dependency org="org.hibernate.orm" name="hibernate-core" rev="6.3.1.Final" conf="compile->default"/>
+
+        <dependency org="jakarta.annotation" name="jakarta.annotation-api" rev="2.1.1" conf="compile->default"/>
+
+        <dependency org="org.junit.platform" name="junit-platform-launcher" rev="1.4.0"/>
+
+    </dependencies>
+
+</ivy-module>
